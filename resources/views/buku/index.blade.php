@@ -93,7 +93,7 @@
     <div class="card">
         <div class="card-header">
             <h3>Daftar Buku (Data Real-Time API)</h3>
-            <span id="book-count-badge" class="badge-mode">0 Buku</span>
+            <span id="book-count-badge" class="badge-mode">{{ count($buku ?? []) }} Buku</span>
         </div>
 
         <div class="table-toolbar">
@@ -120,11 +120,42 @@
                     </tr>
                 </thead>
                 <tbody id="buku-table-body">
-                    <tr>
-                        <td colspan="6" class="table-status-cell">
-                            Memuat data buku dari endpoint GET /api/buku...
-                        </td>
-                    </tr>
+                    @if(isset($buku) && count($buku) > 0)
+                        @foreach ($buku as $index => $item)
+                            <tr>
+                                <td style="text-align: center; color: #718096;">{{ $index + 1 }}</td>
+                                <td>
+                                    <span class="badge-kategori">{{ $item->kategori->nama ?? '-' }}</span>
+                                </td>
+                                <td>
+                                    <strong style="color: #1c2b3a;">{!! $item->judul !!}</strong>
+                                </td>
+                                <td>{{ $item->penulis }}</td>
+                                <td>{{ $item->tahun_terbit }}</td>
+                                <td style="text-align: center;">
+                                    <div class="table-actions" style="justify-content: center;">
+                                        <a href="{{ route('buku.show', $item->id) }}" class="btn btn-sm btn-secondary">
+                                            Lihat Detail
+                                        </a>
+                                        @can('Kelola data buku')
+                                            <button type="button" class="btn btn-sm btn-edit" data-id="{{ $item->id }}" onclick="startEdit({{ $item->id }})">
+                                                Ubah
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-delete" data-id="{{ $item->id }}" onclick="deleteBuku({{ $item->id }})">
+                                                Hapus
+                                            </button>
+                                        @endcan
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    @else
+                        <tr>
+                            <td colspan="6" class="table-status-cell">
+                                Memuat data buku dari endpoint GET /api/buku...
+                            </td>
+                        </tr>
+                    @endif
                 </tbody>
             </table>
         </div>
@@ -139,8 +170,15 @@
 
         // Inisialisasi saat DOM siap
         document.addEventListener('DOMContentLoaded', () => {
-            fetchBuku();
             ensureCategoriesLoaded();
+            @if(!isset($buku) || count($buku) === 0)
+                fetchBuku();
+            @else
+                fetch('/api/buku?all=true', { headers: { 'Accept': 'application/json' } })
+                    .then(r => r.json())
+                    .then(res => { if (res.data) booksCache = res.data; })
+                    .catch(() => {});
+            @endif
         });
 
         /**

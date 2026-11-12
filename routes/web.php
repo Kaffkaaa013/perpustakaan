@@ -9,6 +9,8 @@ use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\PeminjamanController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -39,6 +41,18 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     // Logout
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+
+    // --- SOAL 1: Celah Keamanan (A2, A3, A4) ---
+    // A2: Celah SQL Injection
+    Route::get('/buku-cari', function (Request $request) {
+        $judul = $request->query('judul');
+        $data = DB::select("SELECT * FROM bukus WHERE judul = '$judul'");
+        return response()->json($data);
+    })->name('buku.cari');
+
+    // A3: Celah CSRF via GET untuk hapus buku
+    Route::get('/buku/{buku}/hapus', [BukuController::class, 'destroy'])
+        ->name('buku.hapus');
 
     // Dashboard Dispatcher
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -92,6 +106,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/peminjaman/ajukan', [PeminjamanController::class, 'create'])->name('peminjaman.create');
         Route::post('/peminjaman/ajukan', [PeminjamanController::class, 'store'])->name('peminjaman.store');
     });
+
+    // A4: Celah IDOR pada detail peminjaman tanpa cek kepemilikan
+    Route::get('/peminjaman/{id}', function ($id) {
+        $peminjaman = \App\Models\Peminjaman::findOrFail($id);
+        $peminjaman->load(['user', 'anggota', 'buku.kategori']);
+        return view('peminjaman.show', compact('peminjaman'));
+    })->name('peminjaman.show_idor');
 
     // 6. Riwayat Peminjaman Pribadi
     Route::get('/riwayat-peminjaman', [PeminjamanController::class, 'riwayat'])
