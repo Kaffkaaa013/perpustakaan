@@ -22,6 +22,12 @@ class BukuController extends Controller
         return view('buku.show', compact('buku'));
     }
 
+    public function create()
+    {
+        $kategoris = Kategori::orderBy('nama')->get();
+        return view('buku.kelola', compact('kategoris'));
+    }
+
     public function destroy(Buku $buku)
     {
         $buku->peminjamans()->delete();

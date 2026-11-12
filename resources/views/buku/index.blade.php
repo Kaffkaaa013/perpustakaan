@@ -25,7 +25,7 @@
     </div>
 
     <!-- Card Formulir Tambah / Ubah Buku -->
-    @can('Kelola data buku')
+    @can('kelola-buku')
     <div class="card" id="form-card">
         <div class="card-header">
             <h3 id="form-title">Tambah Buku Baru</h3>
@@ -128,7 +128,7 @@
                                     <span class="badge-kategori">{{ $item->kategori->nama ?? '-' }}</span>
                                 </td>
                                 <td>
-                                    <strong style="color: #1c2b3a;">{!! $item->judul !!}</strong>
+                                    <strong style="color: #1c2b3a;">{{ $item->judul }}</strong>
                                 </td>
                                 <td>{{ $item->penulis }}</td>
                                 <td>{{ $item->tahun_terbit }}</td>
@@ -137,13 +137,17 @@
                                         <a href="{{ route('buku.show', $item->id) }}" class="btn btn-sm btn-secondary">
                                             Lihat Detail
                                         </a>
-                                        @can('Kelola data buku')
+                                        @can('kelola-buku')
                                             <button type="button" class="btn btn-sm btn-edit" data-id="{{ $item->id }}" onclick="startEdit({{ $item->id }})">
                                                 Ubah
                                             </button>
-                                            <button type="button" class="btn btn-sm btn-delete" data-id="{{ $item->id }}" onclick="deleteBuku({{ $item->id }})">
-                                                Hapus
-                                            </button>
+                                            <form method="POST" action="{{ route('buku.destroy', $item->id) }}" style="display: inline;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus buku ini?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-delete">
+                                                    Hapus
+                                                </button>
+                                            </form>
                                         @endcan
                                     </div>
                                 </td>

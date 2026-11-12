@@ -14,7 +14,7 @@ Route::name('api.')->group(function (): void {
     Route::get('buku', [BukuController::class, 'index'])->name('buku.index');
     Route::get('buku/{buku}', [BukuController::class, 'show'])->name('buku.show');
 
-    Route::middleware(['auth', 'permission:Kelola data buku'])->group(function (): void {
+    Route::middleware(['auth', 'can:kelola-buku'])->group(function (): void {
         Route::post('buku', [BukuController::class, 'store'])->name('buku.store');
         Route::put('buku/{buku}', [BukuController::class, 'update'])->name('buku.update');
         Route::patch('buku/{buku}', [BukuController::class, 'update']);

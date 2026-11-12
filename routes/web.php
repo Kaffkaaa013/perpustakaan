@@ -26,6 +26,9 @@ Route::get('/', function () {
 
 // Katalog Buku (Publik & Terdaftar)
 Route::get('/buku', [BukuController::class, 'index'])->name('buku.index');
+Route::get('/buku/create', [BukuController::class, 'create'])
+    ->middleware(['auth', 'can:kelola-buku'])
+    ->name('buku.create');
 Route::get('/buku/{id}', [BukuController::class, 'show'])->name('buku.show');
 
 // Rute Autentikasi (Hanya untuk Tamu / Guest)
@@ -42,17 +45,18 @@ Route::middleware('auth')->group(function () {
     // Logout
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
-    // --- SOAL 1: Celah Keamanan (A2, A3, A4) ---
-    // A2: Celah SQL Injection
+    // --- SOAL 2: Perbaikan Celah Keamanan ---
+    // (b) Perbaikan A2: Query aman dengan Parameter Binding
     Route::get('/buku-cari', function (Request $request) {
         $judul = $request->query('judul');
-        $data = DB::select("SELECT * FROM bukus WHERE judul = '$judul'");
+        $data = DB::select('SELECT * FROM bukus WHERE judul = ?', [$judul]);
         return response()->json($data);
     })->name('buku.cari');
 
-    // A3: Celah CSRF via GET untuk hapus buku
-    Route::get('/buku/{buku}/hapus', [BukuController::class, 'destroy'])
-        ->name('buku.hapus');
+    // (c) Perbaikan A3: Hapus route GET dan gunakan DELETE route dengan proteksi CSRF
+    Route::delete('/buku/{buku}', [BukuController::class, 'destroy'])
+        ->middleware('can:kelola-buku')
+        ->name('buku.destroy');
 
     // Dashboard Dispatcher
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -69,9 +73,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/siswa/dashboard', [DashboardController::class, 'siswa'])
         ->name('siswa.dashboard');
 
-    // 2. Pengelolaan Data Buku (Admin & Petugas)
+    // 2. Pengelolaan Data Buku (Admin & Petugas) - Menggunakan Gate kelola-buku
     Route::get('/kelola-buku', [BukuCrudController::class, 'index'])
-        ->middleware('permission:Kelola data buku')
+        ->middleware('can:kelola-buku')
         ->name('kelola-buku.index');
 
     // 3. Pengelolaan Pengguna & Role (Hanya Admin)
@@ -107,12 +111,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/peminjaman/ajukan', [PeminjamanController::class, 'store'])->name('peminjaman.store');
     });
 
-    // A4: Celah IDOR pada detail peminjaman tanpa cek kepemilikan
-    Route::get('/peminjaman/{id}', function ($id) {
-        $peminjaman = \App\Models\Peminjaman::findOrFail($id);
-        $peminjaman->load(['user', 'anggota', 'buku.kategori']);
-        return view('peminjaman.show', compact('peminjaman'));
-    })->name('peminjaman.show_idor');
+    // Soal 4: Detail peminjaman yang diproteksi menggunakan PeminjamanPolicy
+    Route::get('/peminjaman/{peminjaman}', [PeminjamanController::class, 'show'])
+        ->name('peminjaman.show');
 
     // 6. Riwayat Peminjaman Pribadi
     Route::get('/riwayat-peminjaman', [PeminjamanController::class, 'riwayat'])

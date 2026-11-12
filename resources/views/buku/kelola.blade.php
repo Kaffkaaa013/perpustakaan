@@ -25,7 +25,7 @@
     </div>
 
     <!-- Card Formulir Tambah / Ubah Buku -->
-    @can('Kelola data buku')
+    @can('kelola-buku')
     <div class="card" id="form-card">
         <div class="card-header">
             <h3 id="form-title">Tambah Buku Baru</h3>
