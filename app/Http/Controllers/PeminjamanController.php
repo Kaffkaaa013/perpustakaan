@@ -8,6 +8,7 @@ use App\Models\Peminjaman;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
 class PeminjamanController extends Controller
@@ -127,15 +128,12 @@ class PeminjamanController extends Controller
     }
 
     /**
-     * Detail Peminjaman (dengan proteksi kepemilikan data pribadi)
+     * Detail Peminjaman (diproteksi menggunakan PeminjamanPolicy Soal 4)
      */
     public function show(Peminjaman $peminjaman): View
     {
-        $user = Auth::user();
-
-        if (! $user->can('Kelola peminjaman') && $peminjaman->user_id !== $user->id) {
-            abort(403, 'Akses ditolak: Anda tidak memiliki izin untuk melihat data peminjaman pengguna lain.');
-        }
+        // Otorisasi menggunakan Policy (menggantikan pengecekan manual Modul 5)
+        Gate::authorize('view', $peminjaman);
 
         $peminjaman->load(['user', 'anggota', 'buku.kategori']);
 
