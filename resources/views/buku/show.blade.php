@@ -6,7 +6,7 @@
         <table class="book-detail">
             <tr>
                 <th>Judul</th>
-                <td>{!! $buku['judul'] ?? $buku->judul !!}</td>
+                <td>{{ $buku['judul'] ?? $buku->judul }}</td>
             </tr>
             <tr>
                 <th>Penulis</th>
