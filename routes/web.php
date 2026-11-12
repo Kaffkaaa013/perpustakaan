@@ -138,3 +138,8 @@ Route::middleware('auth')->group(function () {
         ->middleware('permission:Ubah profil sendiri')
         ->name('profile.update');
 });
+
+// Route sementara untuk menguji tampilan pesan error umum saat APP_DEBUG=false
+Route::get('/test-error', function () {
+    throw new \RuntimeException('Pengujian halaman error tanpa jejak kode.');
+});

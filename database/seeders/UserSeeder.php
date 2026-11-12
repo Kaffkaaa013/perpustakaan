@@ -34,11 +34,14 @@ class UserSeeder extends Seeder
         ];
 
         foreach ($users as $userData) {
-            $user = User::query()->firstOrCreate(
+            // Soal 5(c): Ganti password admin bawaan seeder
+            $password = ($userData['role'] === 'admin') ? 'AdminPerpus2026!#' : 'password';
+
+            $user = User::query()->updateOrCreate(
                 ['email' => $userData['email']],
                 [
                     'name' => $userData['name'],
-                    'password' => Hash::make('password'),
+                    'password' => Hash::make($password),
                 ]
             );
 
