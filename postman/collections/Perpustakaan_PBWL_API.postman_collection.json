@@ -1,0 +1,305 @@
+{
+	"info": {
+		"_postman_id": "b9a1c123-4567-4890-abcd-ef0123456789",
+		"name": "Perpustakaan PBWL - API Buku & Rekap",
+		"description": "Collection Postman untuk Pengujian API CRUD Buku, Validasi Data, dan Rekap Modul PBWL.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. GET - Daftar Buku (Pagination 10)",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/buku",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"buku"
+					]
+				}
+			}
+		},
+		{
+			"name": "2. GET - Cari Buku (Query: cari)",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/buku?cari=Pelangi",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"buku"
+					],
+					"query": [
+						{
+							"key": "cari",
+							"value": "Pelangi"
+						}
+					]
+				}
+			}
+		},
+		{
+			"name": "3. GET - Filter Kategori (Query: kategori)",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/buku?kategori=Novel",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"buku"
+					],
+					"query": [
+						{
+							"key": "kategori",
+							"value": "Novel"
+						}
+					]
+				}
+			}
+		},
+		{
+			"name": "4. GET - Filter Tahun (Query: tahun)",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/buku?tahun=2018",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"buku"
+					],
+					"query": [
+						{
+							"key": "tahun",
+							"value": "2018"
+						}
+					]
+				}
+			}
+		},
+		{
+			"name": "5. POST - Tambah Buku (Store Valid)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"kategori_id\": 1,\n    \"judul\": \"Clean Architecture\",\n    \"penulis\": \"Robert C. Martin\",\n    \"tahun_terbit\": 2017\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/buku",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"buku"
+					]
+				}
+			}
+		},
+		{
+			"name": "6. POST - Uji Validasi Store (Gagal 422)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"kategori_id\": 9999,\n    \"judul\": \"\",\n    \"penulis\": \"\",\n    \"tahun_terbit\": 20\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/buku",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"buku"
+					]
+				}
+			}
+		},
+		{
+			"name": "7. GET - Detail Buku (Show)",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/buku/1",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"buku",
+						"1"
+					]
+				}
+			}
+		},
+		{
+			"name": "8. PUT - Perbarui Buku (Update)",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"kategori_id\": 2,\n    \"judul\": \"Laskar Pelangi Edisi Spesial\",\n    \"penulis\": \"Andrea Hirata\",\n    \"tahun_terbit\": 2008\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/buku/1",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"buku",
+						"1"
+					]
+				}
+			}
+		},
+		{
+			"name": "9. DELETE - Hapus Buku (Destroy)",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/buku/5",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"buku",
+						"5"
+					]
+				}
+			}
+		},
+		{
+			"name": "10. GET - Rekap Buku Per Kategori",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/rekap/buku-per-kategori",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"rekap",
+						"buku-per-kategori"
+					]
+				}
+			}
+		},
+		{
+			"name": "11. GET - Rekap Peminjaman Per Buku",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/rekap/pemminjaman-per-buku",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"rekap",
+						"pemminjaman-per-buku"
+					]
+				}
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://127.0.0.1:8000"
+		}
+	]
+}

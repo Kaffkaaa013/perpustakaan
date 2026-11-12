@@ -1,0 +1,278 @@
+<USER_REQUEST>
+# TUGAS PRAKTIKUM MODUL V – AUTENTIKASI DAN ROLE-BASED ACCESS CONTROL (RBAC)
+
+Saya ingin kamu mengembangkan project Laravel Sistem Perpustakaan Digital yang saat ini terbuka di workspace.
+
+Kerjakan implementasi autentikasi dan RBAC dengan ketentuan lengkap di bawah ini. Seluruh instruksi dan spesifikasi tugas sudah dituliskan di sini. Tidak ada file PDF tambahan yang akan diberikan.
+
+## 1. KETENTUAN PROJECT
+
+- Gunakan project Laravel yang sudah ada di workspace.
+- Jangan membuat project Laravel baru.
+- Pertahankan seluruh fitur dari modul sebelumnya.
+- Jangan menghapus atau merombak fitur yang sudah berjalan.
+- Periksa terlebih dahulu struktur database, migration, model, controller, route, middleware, dan Blade.
+- Sesuaikan implementasi dengan kondisi project yang sebenarnya.
+- Jangan mengasumsikan nama tabel atau kolom tanpa memeriksanya.
+
+## 2. AUTENTIKASI MENGGUNAKAN LARAVEL BREEZE
+
+Implementasikan Laravel Breeze dengan fitur:
+
+- Registrasi pengguna.
+- Login.
+- Logout.
+- Validasi kredensial.
+- Password menggunakan hashing.
+- Pengelolaan session.
+
+Pengguna yang memasukkan kredensial tidak valid tidak boleh masuk ke sistem.
+
+Registrasi publik hanya boleh membuat akun dengan role Siswa. Pengguna tidak boleh menentukan sendiri role Admin atau Petugas melalui formulir registrasi.
+
+## 3. SESSION DAN MIDDLEWARE
+
+Terapkan middleware berikut:
+
+- `auth`: melindungi halaman yang hanya boleh diakses setelah login.
+- `guest`: membatasi halaman login dan registrasi bagi pengguna yang sudah login.
+
+Ketentuan:
+- Pengguna yang belum login diarahkan ke halaman login ketika membuka halaman terlindungi.
+- Pengguna yang sudah login tidak dapat mengakses halaman login dan registrasi.
+- Setelah logout, pengguna harus login kembali untuk mengakses halaman terlindungi.
+- Proteksi tetap berlaku ketika pengguna mengetik URL secara langsung.
+
+## 4. IMPLEMENTASI RBAC
+
+Buat tiga role pengguna:
+
+1. Admin
+2. Petugas
+3. Siswa
+
+Terapkan pembagian hak akses berikut.
+
+**ADMIN**
+- Mengakses dashboard admin.
+- Melihat dan mengelola data buku.
+- Mengelola akun pengguna.
+- Menetapkan dan mengelola role pengguna.
+- Mengelola peminjaman.
+- Mengelola pengembalian.
+- Melihat laporan perpustakaan.
+- Melihat dan memperbarui profil sendiri.
+- Melihat riwayat peminjaman sendiri.
+
+**PETUGAS**
+- Mengakses dashboard petugas.
+- Melihat dan mengelola data buku.
+- Mengelola proses peminjaman.
+- Memproses persetujuan peminjaman.
+- Mencatat pengembalian buku.
+- Melihat laporan perpustakaan.
+- Melihat dan memperbarui profil sendiri.
+- Melihat riwayat peminjaman sendiri.
+- Tidak boleh mengelola akun pengguna.
+- Tidak boleh mengubah role pengguna.
+
+**SISWA**
+- Melihat daftar buku.
+- Melihat detail buku.
+- Mengajukan peminjaman buku.
+- Melihat status peminjaman sendiri.
+- Melihat riwayat peminjaman sendiri.
+- Melihat profil sendiri.
+- Memperbarui profil sendiri.
+- Tidak boleh mengakses dashboard administrasi.
+- Tidak boleh mengelola data buku.
+- Tidak boleh mengelola akun pengguna.
+- Tidak boleh melihat data peminjaman atau laporan pengguna lain.
+
+## 5. IMPLEMENTASI SPATIE LARAVEL PERMISSION
+
+Gunakan package `spatie/laravel-permission`.
+
+Buat tiga role:
+- `admin`
+- `petugas`
+- `siswa`
+
+Buat tepat 16 permission berikut:
+
+| No. | Permission | Admin | Petugas | Siswa |
+|---|---|---|---|---|
+| 1 | Akses dashboard admin | Ya | Tidak | Tidak |
+| 2 | Akses dashboard petugas | Tidak | Ya | Tidak |
+| 3 | Lihat daftar buku | Ya | Ya | Ya |
+| 4 | Kelola data buku | Ya | Ya | Tidak |
+| 5 | Kelola data pengguna | Ya | Tidak | Tidak |
+| 6 | Kelola role pengguna | Ya | Tidak | Tidak |
+| 7 | Kelola peminjaman | Ya | Ya | Tidak |
+| 8 | Kelola pengembalian | Ya | Ya | Tidak |
+| 9 | Mengajukan peminjaman buku | Ya | Ya | Ya |
+| 10 | Memproses persetujuan peminjaman | Ya | Ya | Tidak |
+| 11 | Mencatat pengembalian buku | Ya | Ya | Tidak |
+| 12 | Melihat status peminjaman sendiri | Ya | Ya | Ya |
+| 13 | Melihat riwayat peminjaman sendiri | Ya | Ya | Ya |
+| 14 | Lihat laporan perpustakaan | Ya | Ya | Tidak |
+| 15 | Lihat profil sendiri | Ya | Ya | Ya |
+| 16 | Ubah profil sendiri | Ya | Ya | Ya |
+
+Gunakan Seeder untuk membuat role dan permission.
+
+Pastikan:
+- Model User menggunakan trait `HasRoles`.
+- Permission ditetapkan kepada masing-masing role.
+- Admin awal dibuat melalui mekanisme yang aman.
+- Registrasi publik tidak bisa menentukan role sendiri.
+- Pemeriksaan permission diterapkan pada fitur terkait.
+
+Gunakan middleware Spatie dan pemeriksaan permission sesuai kebutuhan.
+
+Untuk data profil dan riwayat peminjaman, lakukan pemeriksaan kepemilikan data berdasarkan ID pengguna yang sedang login. Jangan hanya mengandalkan permission.
+
+## 6. PROTEKSI ROUTE DAN BLADE
+
+Terapkan proteksi menggunakan middleware autentikasi, role, dan permission.
+
+Gunakan direktif Blade:
+- `@role`
+- `@hasrole`
+- `@can`
+- `@canany`
+
+Buat dashboard yang sesuai dengan role masing-masing:
+
+- Dashboard Admin.
+- Dashboard Petugas.
+- Dashboard Siswa.
+
+Menu dan tombol harus menyesuaikan hak akses pengguna.
+
+Pastikan akses ditolak juga ketika pengguna mencoba membuka URL secara langsung, bukan hanya dengan menyembunyikan menu.
+
+## 7. PENGUJIAN WAJIB
+
+Lakukan 15 skenario pengujian berikut:
+
+| No. | Role | Skenario | Hasil yang diharapkan |
+|---|---|---|---|
+| 1 | Belum login | Membuka dashboard admin | Dialihkan ke halaman login |
+| 2 | Admin | Membuka dashboard admin | Berhasil |
+| 3 | Admin | Menambah, mengubah, menghapus data buku | Berhasil |
+| 4 | Admin | Mengelola akun dan role pengguna | Berhasil |
+| 5 | Admin | Mengakses peminjaman, pengembalian, dan laporan | Berhasil |
+| 6 | Petugas | Membuka dashboard petugas | Berhasil |
+| 7 | Petugas | Mengelola data buku | Berhasil |
+| 8 | Petugas | Memproses peminjaman dan pengembalian | Berhasil |
+| 9 | Petugas | Membuka pengelolaan akun atau role | Akses ditolak |
+| 10 | Siswa | Melihat daftar dan detail buku | Berhasil |
+| 11 | Siswa | Melihat dan mengubah profil sendiri | Berhasil |
+| 12 | Siswa | Melihat riwayat peminjaman sendiri | Berhasil |
+| 13 | Siswa | Membuka dashboard admin atau pengelolaan buku | Akses ditolak |
+| 14 | Siswa | Melihat riwayat peminjaman siswa lain | Akses ditolak |
+| 15 | Semua role | Logout lalu membuka halaman terlindungi | Harus login kembali |
+
+Isi hasil aktual berdasarkan pengujian nyata. Jangan mengarang hasil.
+
+Jika ada fitur yang belum tersedia dari modul sebelumnya, implementasikan seperlunya agar seluruh skenario dapat diuji.
+
+## 8. DESAIN ANTARMUKA
+
+Pertahankan identitas visual Sistem Perpustakaan Digital yang sudah ada.
+
+Buat tampilan:
+- Konsisten antara halaman login, registrasi, dan dashboard.
+- Profesional, bersih, dan mudah digunakan.
+- Memiliki navigasi sesuai role.
+- Tidak terlalu ramai.
+- Tidak terlihat seperti template dashboard AI generik.
+- Responsif untuk desktop maupun perangkat mobile.
+
+Jangan mengubah keseluruhan desain jika tampilan lama masih layak digunakan.
+
+## 9. SOURCE CODE DAN DOKUMENTASI
+
+Seluruh perubahan harus diterapkan langsung pada project Laravel.
+
+Buat folder `Dokumentasi_Modul_V` yang berisi:
+
+**A. Penjelasan_Modul_V.md**
+
+Dokumen ini harus menjelaskan:
+1. Autentikasi Laravel Breeze.
+2. Penggunaan session dan middleware.
+3. Konsep RBAC.
+4. Penjelasan tiga role.
+5. Penjelasan 16 permission.
+6. Proteksi route dan Blade.
+7. Perubahan file dan database.
+8. Hasil pengujian 15 skenario.
+9. Kesimpulan.
+
+Gunakan bahasa Indonesia yang natural, formal, sederhana, dan mudah dipahami mahasiswa.
+
+**B. Folder Screenshot**
+
+Simpan bukti screenshot asli dari aplikasi yang benar-benar berjalan.
+
+Minimal mencakup:
+- Login.
+- Registrasi.
+- Dashboard Admin.
+- Dashboard Petugas.
+- Dashboard Siswa.
+- Pengelolaan buku.
+- Pengelolaan akun dan role.
+- Akses Petugas yang ditolak.
+- Akses Siswa yang ditolak.
+- Profil pengguna.
+- Riwayat peminjaman.
+- Pengujian logout.
+- Bukti pendukung seluruh 15 skenario.
+
+Gunakan screenshot langsung dari browser dan aplikasi database. Jangan membuat gambar simulasi atau mengedit hasil agar terlihat berhasil.
+
+## 10. LAPORAN PERUBAHAN
+
+Setelah pengerjaan selesai, berikan laporan yang menjelaskan:
+
+1. File apa saja yang dibuat.
+2. File apa saja yang diubah.
+3. Fitur apa saja yang ditambahkan.
+4. Perubahan database dan migration.
+5. Package yang dipasang.
+6. Cara menjalankan project.
+7. Akun pengujian Admin, Petugas, dan Siswa.
+8. Hasil aktual 15 skenario.
+9. Lokasi source code dan dokumentasi.
+10. Bagian yang belum berhasil atau masih membutuhkan tindakan manual.
+
+## 11. BATASAN DAN PRIORITAS
+
+- Jangan membuat project Laravel baru.
+- Jangan menghapus fitur lama.
+- Jangan mengganti versi Laravel sembarangan.
+- Periksa kompatibilitas Spatie dan Breeze dengan versi Laravel yang digunakan.
+- Jangan mengubah database tanpa pemeriksaan.
+- Jangan menambahkan fitur di luar kebutuhan tugas.
+- Jangan membuat screenshot palsu.
+- Jangan mengklaim berhasil jika belum diuji.
+- Kerjakan bertahap dan periksa hasil setiap tahap.
+
+**PRIORITAS UTAMA:** Semua kebutuhan autentikasi, tiga role, 16 permission, proteksi data pribadi, dan 15 skenario pengujian harus diterapkan dengan benar. Hasil akhir harus berupa project Laravel yang benar-benar berjalan, source code yang rapi, screenshot pengujian nyata, dan dokumentasi penjelasan yang siap dikumpulkan.
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-11-02T16:21:46+07:00.
+
+The user's current state is as follows:
+Active Document: c:\laragon\www\perpustakaan_250441100013\AGENTS.md (LANGUAGE_UNSPECIFIED)
+Cursor is on line: 1
+Other open documents:
+- c:\laragon\www\perpustakaan_250441100013\database\sql\create_trigger.sql (LANGUAGE_UNSPECIFIED)
+- c:\laragon\www\perpustakaan_250441100013\database\sql\create_proc2.sql (LANGUAGE_UNSPECIFIED)
+- c:\laragon\www\perpustakaan_250441100013\database\sql\create_proc1.sql (LANGUAGE_UNSPECIFIED)
+- c:\laragon\www\perpustakaan_250441100013\composer.json (LANGUAGE_UNSPECIFIED)
+- c:\laragon\www\perpustakaan_250441100013\README.md (LANGUAGE_UNSPECIFIED)
+</ADDITIONAL_METADATA>

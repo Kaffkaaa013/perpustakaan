@@ -1,0 +1,458 @@
+Berikut adalah draf isi **BAB 4 (Source Code, Hasil, dan Penjelasan)** untuk laporan praktikum Anda berdasarkan tugas **API CRUD, Validasi Data, dan Rekapitulasi Data Modul PBWL** yang telah kita selesaikan kemarin:
+
+---
+
+# BAB IV  
+## IMPLEMENTASI DAN PEMBAHASAN
+
+### 4.1 Source Code
+
+#### 4.2.1 Source Code Soal No. 1 (Routing API)
+**`routes/api.php`**
+```php
+<?php
+
+use App\Http\Controllers\Api\BukuController;
+use App\Http\Controllers\Api\RekapController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/user', function (Request $request) {
+    return $request->user();
+})->middleware('auth:sanctum');
+
+// Route API Resource CRUD Buku
+Route::apiResource('buku', BukuController::class);
+
+// Route Rekapitulasi Data
+Route::prefix('rekap')->group(function () {
+    Route::get('/buku-per-kategori', [RekapController::class, 'bukuPerKategori']);
+    Route::get('/pemminjaman-per-buku', [RekapController::class, 'peminjamanPerBuku']);
+    Route::get('/peminjaman-per-buku', [RekapController::class, 'peminjamanPerBuku']);
+});
+```
+
+---
+
+#### 4.2.2 Source Code Soal No. 2 (Form Request & Validasi Data)
+**`StoreBukuRequest.php`**
+```php
+<?php
+
+namespace App\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class StoreBukuRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    public function rules(): array
+    {
+        return [
+            'kategori_id'  => 'required|exists:kategoris,id',
+            'judul'        => 'required|string|max:255',
+            'penulis'      => 'required|string|max:255',
+            'tahun_terbit' => 'required|integer|digits:4',
+        ];
+    }
+
+    public function attributes(): array
+    {
+        return [
+            'kategori_id'  => 'kategori',
+            'judul'        => 'judul buku',
+            'penulis'      => 'penulis buku',
+            'tahun_terbit' => 'tahun terbit',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'kategori_id.required' => 'Kategori wajib dipilih.',
+            'kategori_id.exists'   => 'Kategori yang dipilih tidak valid atau tidak ditemukan.',
+            'judul.required'       => 'Judul buku wajib diisi.',
+            'judul.string'         => 'Judul buku harus berupa teks.',
+            'judul.max'            => 'Judul buku tidak boleh lebih dari :max karakter.',
+            'penulis.required'     => 'Penulis buku wajib diisi.',
+            'penulis.string'       => 'Penulis buku harus berupa teks.',
+            'penulis.max'          => 'Penulis buku tidak boleh lebih dari :max karakter.',
+            'tahun_terbit.required'=> 'Tahun terbit wajib diisi.',
+            'tahun_terbit.integer' => 'Tahun terbit harus berupa angka.',
+            'tahun_terbit.digits'  => 'Tahun terbit harus berupa 4 digit angka.',
+        ];
+    }
+}
+```
+
+**`UpdateBukuRequest.php`**
+```php
+<?php
+
+namespace App\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class UpdateBukuRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    public function rules(): array
+    {
+        $isRequired = $this->isMethod('patch') ? 'sometimes|required' : 'required';
+
+        return [
+            'kategori_id'  => [$isRequired, 'exists:kategoris,id'],
+            'judul'        => [$isRequired, 'string', 'max:255'],
+            'penulis'      => [$isRequired, 'string', 'max:255'],
+            'tahun_terbit' => [$isRequired, 'integer', 'digits:4'],
+        ];
+    }
+
+    public function attributes(): array
+    {
+        return [
+            'kategori_id'  => 'kategori',
+            'judul'        => 'judul buku',
+            'penulis'      => 'penulis buku',
+            'tahun_terbit' => 'tahun terbit',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'kategori_id.required' => 'Kategori wajib dipilih.',
+            'kategori_id.exists'   => 'Kategori yang dipilih tidak valid atau tidak ditemukan.',
+            'judul.required'       => 'Judul buku wajib diisi.',
+            'judul.string'         => 'Judul buku harus berupa teks.',
+            'judul.max'            => 'Judul buku tidak boleh lebih dari :max karakter.',
+            'penulis.required'     => 'Penulis buku wajib diisi.',
+            'penulis.string'       => 'Penulis buku harus berupa teks.',
+            'penulis.max'          => 'Penulis buku tidak boleh lebih dari :max karakter.',
+            'tahun_terbit.required'=> 'Tahun terbit wajib diisi.',
+            'tahun_terbit.integer' => 'Tahun terbit harus berupa angka.',
+            'tahun_terbit.digits'  => 'Tahun terbit harus berupa 4 digit angka.',
+        ];
+    }
+}
+```
+
+---
+
+#### 4.2.3 Source Code Soal No. 3 (API Resource Controller & Model Buku)
+**`BukuController.php`**
+```php
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreBukuRequest;
+use App\Http\Requests\UpdateBukuRequest;
+use App\Models\Buku;
+use Illuminate\Http\Request;
+
+class BukuController extends Controller
+{
+    public function index(Request $request)
+    {
+        $query = Buku::with('kategori')
+            ->withCount(['peminjamans', 'peminjamans as peminjaman_count'])
+            ->latest();
+
+        // Pencarian berdasarkan judul atau penulis
+        if ($request->filled('cari')) {
+            $cari = $request->input('cari');
+            $query->where(function ($q) use ($cari) {
+                $q->where('judul', 'like', "%{$cari}%")
+                    ->orWhere('penulis', 'like', "%{$cari}%");
+            });
+        }
+
+        // Filter berdasarkan kategori (ID atau nama kategori)
+        if ($request->filled('kategori')) {
+            $kategori = $request->input('kategori');
+            $query->where(function ($q) use ($kategori) {
+                if (is_numeric($kategori)) {
+                    $q->where('kategori_id', $kategori);
+                } else {
+                    $q->whereHas('kategori', function ($sub) use ($kategori) {
+                        $sub->where('nama', 'like', "%{$kategori}%");
+                    });
+                }
+            });
+        } elseif ($request->filled('kategori_id')) {
+            $query->where('kategori_id', $request->input('kategori_id'));
+        }
+
+        // Filter berdasarkan tahun terbit
+        if ($request->filled('tahun')) {
+            $query->where('tahun_terbit', $request->input('tahun'));
+        } elseif ($request->filled('tahun_terbit')) {
+            $query->where('tahun_terbit', $request->input('tahun_terbit'));
+        }
+
+        // Pagination 10 data per halaman dengan mempertahankan query string
+        $bukus = $query->paginate(10)->withQueryString();
+
+        return response()->json($bukus, 200);
+    }
+
+    public function store(StoreBukuRequest $request)
+    {
+        $buku = Buku::create($request->validated());
+
+        $buku->load('kategori')->loadCount(['peminjamans', 'peminjamans as peminjaman_count']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data buku berhasil ditambahkan.',
+            'data'    => $buku,
+        ], 201);
+    }
+
+    public function show(Buku $buku)
+    {
+        $buku->load('kategori')->loadCount(['peminjamans', 'peminjamans as peminjaman_count']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Detail data buku.',
+            'data'    => $buku,
+        ], 200);
+    }
+
+    public function update(UpdateBukuRequest $request, Buku $buku)
+    {
+        $buku->update($request->validated());
+
+        $buku->load('kategori')->loadCount(['peminjamans', 'peminjamans as peminjaman_count']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data buku berhasil diperbarui.',
+            'data'    => $buku,
+        ], 200);
+    }
+
+    public function destroy(Buku $buku)
+    {
+        $buku->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data buku berhasil dihapus.',
+        ], 200);
+    }
+}
+```
+
+**`Buku.php`**
+```php
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Buku extends Model
+{
+    use HasFactory;
+
+    protected $table = 'bukus';
+
+    protected $fillable = [
+        'kategori_id',
+        'judul',
+        'penulis',
+        'tahun_terbit',
+    ];
+
+    public function kategori()
+    {
+        return $this->belongsTo(Kategori::class, 'kategori_id');
+    }
+
+    public function peminjamans()
+    {
+        return $this->hasMany(Peminjaman::class, 'buku_id');
+    }
+
+    public function peminjaman()
+    {
+        return $this->hasMany(Peminjaman::class, 'buku_id');
+    }
+
+    public function getTahunAttribute()
+    {
+        return $this->tahun_terbit;
+    }
+
+    public function getKategoriAttribute()
+    {
+        $kategoriModel = $this->getRelationValue('kategori');
+        if (! $kategoriModel) {
+            $kategoriModel = $this->kategori()->first();
+        }
+
+        return $kategoriModel ? $kategoriModel->nama : '-';
+    }
+}
+```
+
+---
+
+#### 4.2.4 Source Code Soal No. 4 (Endpoint Rekapitulasi Data)
+**`RekapController.php`**
+```php
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\Buku;
+use App\Models\Kategori;
+
+class RekapController extends Controller
+{
+    public function bukuPerKategori()
+    {
+        $rekap = Kategori::withCount([
+            'bukus',
+            'bukus as total_buku',
+            'bukus as jumlah_buku',
+        ])->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Rekap jumlah buku per kategori berhasil diambil.',
+            'data'    => $rekap,
+        ], 200);
+    }
+
+    public function peminjamanPerBuku()
+    {
+        $rekap = Buku::with('kategori')
+            ->withCount([
+                'peminjamans',
+                'peminjamans as peminjaman_count',
+                'peminjamans as total_peminjaman',
+                'peminjamans as jumlah_peminjaman',
+            ])->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Rekap peminjaman per buku berhasil diambil.',
+            'data'    => $rekap,
+        ], 200);
+    }
+}
+```
+
+---
+
+#### 4.2.5 Source Code Soal No. 5 (Automated Feature Testing)
+**`ApiBukuTest.php`**
+```php
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Buku;
+use App\Models\Kategori;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class ApiBukuTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->artisan('db:seed');
+    }
+
+    public function test_api_buku_index_returns_paginated_list(): void
+    {
+        $response = $this->getJson('/api/buku');
+        $response->assertStatus(200)
+            ->assertJsonStructure(['current_page', 'data', 'per_page', 'total']);
+        $this->assertEquals(10, $response->json('per_page'));
+    }
+
+    public function test_api_buku_store_validation_errors(): void
+    {
+        $response = $this->postJson('/api/buku', []);
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['kategori_id', 'judul', 'penulis', 'tahun_terbit']);
+        $this->assertEquals('Kategori wajib dipilih.', $response->json('errors.kategori_id.0'));
+    }
+
+    public function test_api_buku_store_success(): void
+    {
+        $kategori = Kategori::first();
+        $response = $this->postJson('/api/buku', [
+            'kategori_id'  => $kategori->id,
+            'judul'        => 'Clean Code Indonesia',
+            'penulis'      => 'Robert C. Martin',
+            'tahun_terbit' => 2008,
+        ]);
+        $response->assertStatus(201)->assertJsonPath('success', true);
+        $this->assertDatabaseHas('bukus', ['judul' => 'Clean Code Indonesia']);
+    }
+
+    public function test_rekap_endpoints(): void
+    {
+        $this->getJson('/api/rekap/buku-per-kategori')->assertStatus(200)->assertJsonPath('success', true);
+        $this->getJson('/api/rekap/pemminjaman-per-buku')->assertStatus(200)->assertJsonPath('success', true);
+    }
+}
+```
+
+---
+
+### 4.2 Hasil
+
+#### 4.3.1 Hasil Soal No. 1
+*(Tempat screenshot daftar routing API dari terminal menggunakan perintah `php artisan route:list --path=api`)*
+
+#### 4.3.2 Hasil Soal No. 2
+*(Tempat screenshot pengujian validasi galat pada Postman dengan status **422 Unprocessable Content** beserta pesan error berbahasa Indonesia saat mengirim body kosong `{}`)*
+
+#### 4.3.3 Hasil Soal No. 3
+*(Tempat screenshot response Postman untuk method GET `/api/buku`, GET `/api/buku?cari=...`, POST `/api/buku` (status 201), PUT `/api/buku/{id}` (status 200), dan DELETE `/api/buku/{id}`)*
+
+#### 4.3.4 Hasil Soal No. 4
+*(Tempat screenshot response JSON Postman untuk endpoint `/api/rekap/buku-per-kategori` dan `/api/rekap/pemminjaman-per-buku`)*
+
+#### 4.3.5 Hasil Soal No. 5
+*(Tempat screenshot eksekusi PHPUnit di terminal `php artisan test` dengan hasil **OK (15 tests, 126 assertions)**)*
+
+---
+
+### 4.3 Penjelasan
+
+#### 4.4.1 Penjelasan Soal No. 1
+Pada soal ini dilakukan pendefinisian routing API pada file `routes/api.php`. Untuk entitas buku, digunakan `Route::apiResource('buku', BukuController::class)`. Berbeda dengan resource web biasa yang menyediakan method create dan edit untuk menampilkan form antarmuka Blade, `apiResource` hanya mendaftarkan 5 endpoint stateless yang murni menangani transfer data JSON, yaitu `index` (GET), `store` (POST), `show` (GET), `update` (PUT/PATCH), dan `destroy` (DELETE). Selain itu, dibuat grup prefix `/rekap` untuk menampung endpoint rekapitulasi data.
+
+#### 4.4.2 Penjelasan Soal No. 2
+Untuk menjaga validitas data sebelum disimpan atau diperbarui ke database, dibuat dua Form Request yaitu `StoreBukuRequest` dan `UpdateBukuRequest`. Aturan validasi diterapkan pada `kategori_id` (wajib dan harus ada di tabel kategoris), `judul` dan `penulis` (wajib berupa teks maksimal 255 karakter), serta `tahun_terbit` (wajib berupa angka 4 digit). Melalui method `messages()` dan `attributes()`, pesan galat dan nama atribut dikustomisasi ke dalam bahasa Indonesia agar ramah pengguna. Jika request gagal divalidasi, Laravel secara otomatis mengembalikan response JSON dengan status code **422 Unprocessable Content** tanpa mengeksekusi controller lebih lanjut.
+
+#### 4.4.3 Penjelasan Soal No. 3
+Implementasi CRUD dan manipulasi data diatur di dalam `BukuController`. Pada method `index`, diterapkan eager loading `with('kategori')` guna mencegah masalah query *N+1*, serta `withCount('peminjamans')` untuk menghitung total peminjaman buku tersebut. Method ini juga mendukung pencarian kata kunci (`cari`) pada judul atau penulis, filter kategori (`kategori`), dan filter tahun terbit (`tahun`). Seluruh data diurutkan dari yang terbaru (`latest()`) dan dibatasi menggunakan pagination 10 data per halaman dengan `withQueryString()` agar filter pencarian tetap terbawa saat berpindah halaman. Untuk method `store`, data disimpan menggunakan `$request->validated()` dengan status HTTP **201 Created**, sedangkan method `show`, `update`, dan `destroy` mengembalikan status **200 OK**.
+
+#### 4.4.4 Penjelasan Soal No. 4
+Pada soal ini dibuat `RekapController` untuk menangani kalkulasi agregasi data statistik perpustakaan. Method `bukuPerKategori()` memanfaatkan `Kategori::withCount('bukus')` untuk menghitung berapa banyak buku yang terdaftar di setiap kategori. Sedangkan method `peminjamanPerBuku()` memanfaatkan `Buku::withCount('peminjamans')` untuk mengetahui frekuensi peminjaman tiap judul buku. Response disajikan dalam format JSON terstandar yang dilengkapi properti `success`, `message`, dan `data`.
+
+#### 4.4.5 Penjelasan Soal No. 5
+Tahap terakhir adalah pengujian API untuk memastikan seluruh endpoint bekerja sesuai spesifikasi dan tidak mengalami regresi sistem. Pengujian dilakukan melalui dua pendekatan: pengujian otomatis (*automated feature testing*) menggunakan PHPUnit (`ApiBukuTest.php`) dan pengujian manual menggunakan Postman. Pada pengujian otomatis, dijalankan skenario pengujian terhadap struktur JSON, pagination 10 data, validasi respon pesan bahasa Indonesia, transaksi CRUD, hingga endpoint rekap. Seluruh 15 test berhasil lolos (100% passed). Koleksi Postman juga disediakan untuk memudahkan pengujian manual dengan berbagai variasi parameter query dan payload JSON.
