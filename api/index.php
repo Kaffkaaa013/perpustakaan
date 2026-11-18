@@ -18,25 +18,34 @@ foreach ($dirs as $dir) {
     }
 }
 
+// Root proyek (satu level di atas folder api/)
+$projectRoot = dirname(__DIR__);
+$publicPath  = $projectRoot . '/public';
+
 // Layani berkas statis (Vite build CSS, JS, aset publik) secara langsung
 $uri = urldecode(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH));
-$publicFile = __DIR__ . '/../public' . $uri;
+
+// Hapus query string jika ada
+$uri = strtok($uri, '?') ?: '/';
+
+$publicFile = $publicPath . $uri;
 
 if ($uri !== '/' && file_exists($publicFile) && !is_dir($publicFile)) {
-    $ext = pathinfo($publicFile, PATHINFO_EXTENSION);
+    $ext = strtolower(pathinfo($publicFile, PATHINFO_EXTENSION));
     $mimeTypes = [
-        'css'  => 'text/css; charset=UTF-8',
-        'js'   => 'application/javascript; charset=UTF-8',
-        'json' => 'application/json; charset=UTF-8',
-        'png'  => 'image/png',
-        'jpg'  => 'image/jpeg',
-        'jpeg' => 'image/jpeg',
-        'gif'  => 'image/gif',
-        'svg'  => 'image/svg+xml',
-        'ico'  => 'image/x-icon',
-        'woff' => 'font/woff',
-        'woff2'=> 'font/woff2',
-        'ttf'  => 'font/ttf',
+        'css'   => 'text/css; charset=UTF-8',
+        'js'    => 'application/javascript; charset=UTF-8',
+        'json'  => 'application/json; charset=UTF-8',
+        'png'   => 'image/png',
+        'jpg'   => 'image/jpeg',
+        'jpeg'  => 'image/jpeg',
+        'gif'   => 'image/gif',
+        'svg'   => 'image/svg+xml',
+        'ico'   => 'image/x-icon',
+        'woff'  => 'font/woff',
+        'woff2' => 'font/woff2',
+        'ttf'   => 'font/ttf',
+        'map'   => 'application/json',
     ];
 
     if (isset($mimeTypes[$ext])) {
@@ -44,9 +53,13 @@ if ($uri !== '/' && file_exists($publicFile) && !is_dir($publicFile)) {
     }
 
     header('Cache-Control: public, max-age=31536000, immutable');
+    header('X-Static-File: ' . $uri); // debug header
     readfile($publicFile);
     exit;
 }
 
 // Forward seluruh rute dinamis ke public/index.php bawaan Laravel
-require __DIR__ . '/../public/index.php';
+$_SERVER['SCRIPT_FILENAME'] = $publicPath . '/index.php';
+$_SERVER['DOCUMENT_ROOT']   = $publicPath;
+
+require $publicPath . '/index.php';

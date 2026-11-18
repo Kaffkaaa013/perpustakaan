@@ -5,7 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Perpustakaan 250441100013</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @php
+        $manifest = json_decode(file_get_contents(public_path('build/manifest.json')), true);
+        $cssFile = $manifest['resources/css/app.css']['file'] ?? 'assets/app.css';
+        $jsFile  = $manifest['resources/js/app.js']['file'] ?? 'assets/app.js';
+    @endphp
+    <link rel="stylesheet" href="/build/{{ $cssFile }}">
+    <script src="/build/{{ $jsFile }}" defer></script>
 </head>
 <body>
 
